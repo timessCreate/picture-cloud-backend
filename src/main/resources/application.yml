@@ -1,0 +1,39 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: picture-cloud-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/picture-cloud
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: "099636"
+    username: root
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+    #打印日志
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  #设置逻辑删除字段
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      #当值为1时，表示逻辑删除
+      logic-delete-value: 1
+      #逻辑未删除值
+      logic-not-delete-value: 0
+
+#接口文档配置
+knife4j:
+  enable: true
+  openapi:
+    title: 云图库后端接口
+    version: v1.0
+    group:
+      default:
+        group-name: 默认分组
+        api-rule: package
+        api-rule-resources:
+          - com.timess.picturecloud.demos.web
