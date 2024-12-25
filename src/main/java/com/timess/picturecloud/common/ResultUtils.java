@@ -32,7 +32,7 @@ public class ResultUtils{
      * @return
      */
     public static BaseResponse<?> error(int code, String message){
-        return new BaseResponse<>(code, message);
+        return new BaseResponse<>(code, message, "");
     }
 
     /**
