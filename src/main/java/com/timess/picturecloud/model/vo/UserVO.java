@@ -37,7 +37,7 @@ public class UserVO implements Serializable {
     private String userProfile;
 
     /**
-     * 用户角色：user/admin
+     * 用户角色：
      */
     private String userRole;
 
@@ -45,6 +45,14 @@ public class UserVO implements Serializable {
      * 创建时间
      */
     private Date createTime;
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+    /**
+     * 用户状态
+     */
+    private int status;
 
     private static final long serialVersionUID = 1L;
 }

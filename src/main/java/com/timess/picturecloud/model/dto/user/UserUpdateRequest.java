@@ -31,6 +31,10 @@ public class UserUpdateRequest implements Serializable {
     private String userProfile;
 
     /**
+     * 用户状态
+     */
+    private int status;
+    /**
      * 用户角色：user/admin
      */
     private String userRole;
