@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8123
   servlet:
     context-path: /api
 
@@ -7,7 +7,7 @@ spring:
   application:
     name: picture-cloud-backend
   datasource:
-    url: jdbc:mysql://localhost:3306/picture-cloud
+    url: jdbc:mysql://localhost:3306/picture_cloud
     driver-class-name: com.mysql.cj.jdbc.Driver
     password: "099636"
     username: root
@@ -33,7 +33,6 @@ knife4j:
     version: v1.0
     group:
       default:
-        group-name: 默认分组
         api-rule: package
         api-rule-resources:
-          - com.timess.picturecloud.demos.web
+          - com.timess.picturecloud.controller
