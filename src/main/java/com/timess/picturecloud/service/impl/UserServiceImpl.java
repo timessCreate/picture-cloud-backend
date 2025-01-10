@@ -166,6 +166,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return queryWrapper;
     }
 
+    /**
+     * 用户角色是否为管理员或者超级管理员
+     * @param user
+     * @return
+     */
+    @Override
+    public boolean isAdmin(User user) {
+        if(user == null){
+            return false;
+        }
+        return UserRoleEnum.ADMIN.getValue().equals(user.getUserRole())
+                || UserRoleEnum.SUPER_ADMIN.getValue().equals(user.getUserRole());
+    }
+
 }
 
 

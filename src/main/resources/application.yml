@@ -4,6 +4,9 @@ server:
     context-path: /api
 
 spring:
+  #激活使用本地环境
+  profiles:
+    active: local
   application:
     name: picture-cloud-backend
   datasource:
@@ -11,6 +14,11 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     password: "099636"
     username: root
+  #限制文件大小
+  servlet:
+    multipart:
+      max-file-size: 10MB
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
@@ -24,6 +32,9 @@ mybatis-plus:
       logic-delete-value: 1
       #逻辑未删除值
       logic-not-delete-value: 0
+
+
+
 
 #接口文档配置
 knife4j:
