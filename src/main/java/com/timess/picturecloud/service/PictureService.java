@@ -7,6 +7,7 @@ import com.timess.picturecloud.model.domain.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.timess.picturecloud.model.domain.User;
 import com.timess.picturecloud.model.dto.picture.PictureQueryRequest;
+import com.timess.picturecloud.model.dto.picture.PictureReviewRequest;
 import com.timess.picturecloud.model.dto.picture.PictureUploadRequest;
 import com.timess.picturecloud.model.vo.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
@@ -57,4 +58,19 @@ public interface PictureService extends IService<Picture> {
      * @param picture
      */
     void validPicture(Picture picture);
+
+
+    /**
+     * Picture review
+      * @param pictureReviewRequest
+     * @param loginUser
+     */
+    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
+
+    /**
+     * Fill in the review parameter information of the picture table
+     * @param picture
+     * @param logUser
+     */
+    void fillReviewParams(Picture picture, User logUser);
 }

@@ -9,6 +9,7 @@ import com.timess.picturecloud.annotation.AuthCheck;
 import com.timess.picturecloud.common.BaseResponse;
 import com.timess.picturecloud.common.DeleteRequest;
 import com.timess.picturecloud.common.ResultUtils;
+import com.timess.picturecloud.constant.PictureReviewStatusEnum;
 import com.timess.picturecloud.constant.UserConstant;
 import com.timess.picturecloud.exception.BusinessException;
 import com.timess.picturecloud.exception.ErrorCode;
@@ -16,10 +17,7 @@ import com.timess.picturecloud.exception.ThrowUtils;
 import com.timess.picturecloud.manager.CosManager;
 import com.timess.picturecloud.model.domain.Picture;
 import com.timess.picturecloud.model.domain.User;
-import com.timess.picturecloud.model.dto.picture.PictureEditRequest;
-import com.timess.picturecloud.model.dto.picture.PictureQueryRequest;
-import com.timess.picturecloud.model.dto.picture.PictureUpdateRequest;
-import com.timess.picturecloud.model.dto.picture.PictureUploadRequest;
+import com.timess.picturecloud.model.dto.picture.*;
 import com.timess.picturecloud.model.vo.PictureTagCategory;
 import com.timess.picturecloud.model.vo.PictureVO;
 import com.timess.picturecloud.service.PictureService;
@@ -53,7 +51,13 @@ public class PictureController {
     @Resource
     private PictureService pictureService;
 
-    @AuthCheck(anyRole = {UserConstant.SUPER_ADMIN_ROLE, UserConstant.ADMIN_ROLE})
+    /**
+     * upload picture
+     * @param multipartFile
+     * @param pictureUploadRequest
+     * @param request
+     * @return
+     */
     @PostMapping("/upload")
     public BaseResponse<PictureVO> uploadPicture(
             @RequestPart("file")MultipartFile multipartFile,
@@ -92,7 +96,7 @@ public class PictureController {
      */
     @PostMapping("/update")
     @AuthCheck(anyRole = {UserConstant.SUPER_ADMIN_ROLE, UserConstant.ADMIN_ROLE})
-    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest) {
+    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest, HttpServletRequest request) {
         if (pictureUpdateRequest == null || pictureUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -107,6 +111,9 @@ public class PictureController {
         long id = pictureUpdateRequest.getId();
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        //supplement additional review parameters
+        User loginUser = userService.getLoginUser(request);
+        pictureService.fillReviewParams(picture, loginUser);
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -162,6 +169,8 @@ public class PictureController {
                                                              HttpServletRequest request) {
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
+        //set the review status of pictureQueryRequest class to pass
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         // 查询数据库
@@ -197,6 +206,8 @@ public class PictureController {
         if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR);
         }
+        //update review parameters
+        pictureService.fillReviewParams(picture, loginUser);
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -206,14 +217,27 @@ public class PictureController {
     @GetMapping("/tag_category")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
         PictureTagCategory pictureTagCategory = new PictureTagCategory();
-        List<String> tagList = Arrays.asList("热门", "搞笑", "生活", "高清", "艺术", "校园", "背景", "简历", "创意");
+        List<String> tagList = Arrays.asList("热门", "搞笑", "生活", "高清", "艺术", "校园", "背景", "简历", "创意","人像");
         List<String> categoryList = Arrays.asList("模板", "电商", "表情包", "素材", "海报");
         pictureTagCategory.setTagList(tagList);
         pictureTagCategory.setCategoryList(categoryList);
         return ResultUtils.success(pictureTagCategory);
     }
 
-
+    /**
+     * picture review interface
+     * @param pictureReviewRequest review request class
+     * @param request
+     * @return true
+     */
+    @PostMapping("/review")
+    @AuthCheck(anyRole = {UserConstant.SUPER_ADMIN_ROLE, UserConstant.ADMIN_ROLE})
+    public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest, HttpServletRequest request){
+        ThrowUtils.throwIf(pictureReviewRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser =  userService.getLoginUser(request);
+        pictureService.doPictureReview(pictureReviewRequest, loginUser);
+        return ResultUtils.success(true);
+    }
 }
 
 
