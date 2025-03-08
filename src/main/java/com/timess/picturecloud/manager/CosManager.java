@@ -62,4 +62,12 @@ public class CosManager {
         return cosClient.putObject(putObjectRequest);
     }
 
+    /**
+     * 删除cos对象存储中的照片
+     * @param key
+     */
+    public void deleteObject(String key){
+        cosClient.deleteObject(cosClientConfig.getBucket(), key);
+    }
+
 }

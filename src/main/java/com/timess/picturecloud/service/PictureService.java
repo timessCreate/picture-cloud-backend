@@ -23,12 +23,12 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 图片上传
-     * @param multipartFile
+     * @param inputSource
      * @param pictureUploadRequest 上传图片的id
      * @param loginUser 当前登录用户
      * @return
      */
-    PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, User loginUser);
+    PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser);
 
     /**
      * 将查询请求转化为QueryWrapper对象
@@ -73,4 +73,10 @@ public interface PictureService extends IService<Picture> {
      * @param logUser
      */
     void fillReviewParams(Picture picture, User logUser);
+
+    /**
+     * 清理指定图片记录
+     * @param oldPicture
+     */
+    void deletePictureFile(Picture oldPicture);
 }

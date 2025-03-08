@@ -12,7 +12,11 @@ import com.timess.picturecloud.constant.PictureReviewStatusEnum;
 import com.timess.picturecloud.exception.BusinessException;
 import com.timess.picturecloud.exception.ErrorCode;
 import com.timess.picturecloud.exception.ThrowUtils;
+import com.timess.picturecloud.manager.CosManager;
 import com.timess.picturecloud.manager.FileManager;
+import com.timess.picturecloud.manager.upload.FilePictureUpload;
+import com.timess.picturecloud.manager.upload.PictureUploadTemplate;
+import com.timess.picturecloud.manager.upload.UrlPictureUpload;
 import com.timess.picturecloud.model.domain.Picture;
 import com.timess.picturecloud.model.domain.User;
 import com.timess.picturecloud.model.dto.file.UploadPictureResult;
@@ -26,6 +30,7 @@ import com.timess.picturecloud.mapper.PictureMapper;
 import com.timess.picturecloud.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,20 +50,26 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     implements PictureService{
 
     @Resource
-    FileManager fileManager;
+    private FilePictureUpload filePictureUpload;
 
     @Resource
-    UserService userService;
+    private UrlPictureUpload urlPictureUpload;
+
+    @Resource
+    private UserService userService;
+
+    @Resource
+    private CosManager cosManager;
 
     /**
      * 增加或删除图片上传记录到数据库
-     * @param multipartFile
+     * @param inputSource
      * @param pictureUploadRequest 上传图片的id
      * @param loginUser 当前登录用户
      * @return
      */
     @Override
-    public PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, User loginUser) {
+    public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
         //参数校验
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_AUTH_ERROR);
         //判断是新增还是删除
@@ -77,7 +88,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         //上传图片, 得到图片信息
         String uploadPathPrefix = String.format("public/%s", loginUser.getId());
-        UploadPictureResult uploadPictureResult = fileManager.uploadPicture(multipartFile, uploadPathPrefix);
+        //根据inputSource的类型区分上传方式
+        PictureUploadTemplate pictureUploadTemplate = filePictureUpload;
+        if(inputSource instanceof String){
+            pictureUploadTemplate = urlPictureUpload;
+        }
+        UploadPictureResult uploadPictureResult = pictureUploadTemplate.uploadPicture(inputSource, uploadPathPrefix);
+
         //构造入库对象
         Picture picture = new Picture();
         //如果图片id已经存在，则为更新操作
@@ -253,7 +270,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         boolean result = this.updateById(updatePicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
     }
-
     /**
      * Fill in the review parameter information of the picture table
      * @param picture
@@ -275,7 +291,21 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
     }
 
-
+    @Async    //异步操作
+    @Override
+    public void deletePictureFile(Picture oldPicture) {
+        //判断该图片是否被多条记录使用
+        String pictureUrl = oldPicture.getUrl();
+        long count = this.lambdaQuery()
+                .eq(Picture::getUrl, pictureUrl)
+                .count();
+        //有不止一条记录使用了该图片
+        if(count > 1){
+            return;
+        }
+        //删除图片
+        cosManager.deleteObject(pictureUrl);
+    }
 }
 
 
