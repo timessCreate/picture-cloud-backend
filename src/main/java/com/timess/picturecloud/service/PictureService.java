@@ -79,4 +79,14 @@ public interface PictureService extends IService<Picture> {
      * @param oldPicture
      */
     void deletePictureFile(Picture oldPicture);
+
+
+    void deletePicture(User loginUser, long pictureId);
+
+    /**
+     * 校验空间图片的权限
+     * @param loginUser
+     * @param picture
+     */
+    void checkPictureAuth(User loginUser, Picture picture);
 }

@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serializable;
 import java.util.Date;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 图片
@@ -12,6 +15,8 @@ import lombok.Data;
  */
 @TableName(value ="picture")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Picture implements Serializable {
     /**
      * id
@@ -88,7 +93,10 @@ public class Picture implements Serializable {
      * 审核人 id
      */
     private Long reviewerId;
-
+    /**
+     * 归属空间id
+     */
+    private Long spaceId;
     /**
      * 审核时间
      */
