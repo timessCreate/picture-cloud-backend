@@ -204,7 +204,6 @@ public class PictureController {
             //公开图库
             //普通用户只能看到审核通过后的数据
             pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
-            pictureQueryRequest.setNullSpaceId(true);
         }else {
             //私有空间
             User loginUser = userService.getLoginUser(request);
@@ -230,14 +229,14 @@ public class PictureController {
         //查询缓存，缓存中没有，再查询数据库
         //获取String类型操作对象
         ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
-        String redisValue = valueOps.get(redisKey);
-        if(redisValue != null){
-            //命中缓存,则直接返回结果,并更新本地缓存
-            log.info("命中分布式缓存：" + redisValue);
-            LOCAL_CACHE.put(localCacheKey, redisValue);
-            Page<PictureVO> cachePage = JSONUtil.toBean(redisValue, Page.class);
-            return ResultUtils.success(cachePage);
-        }
+//        String redisValue = valueOps.get(redisKey);
+//        if(redisValue != null){
+//            //命中缓存,则直接返回结果,并更新本地缓存
+//            log.info("命中分布式缓存：" + redisValue);
+//            LOCAL_CACHE.put(localCacheKey, redisValue);
+//            Page<PictureVO> cachePage = JSONUtil.toBean(redisValue, Page.class);
+//            return ResultUtils.success(cachePage);
+//        }
         // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));

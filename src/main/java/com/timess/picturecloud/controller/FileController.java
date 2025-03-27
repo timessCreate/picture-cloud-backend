@@ -25,11 +25,14 @@ import java.io.IOException;
  */
 @Slf4j
 @RestController
+@Deprecated
 @RequestMapping("/file")
 public class FileController {
 
     @Resource
     private CosManager cosManager;
+
+    @Deprecated
     @AuthCheck(anyRole = {UserConstant.SUPER_ADMIN_ROLE, UserConstant.ADMIN_ROLE})
     @PostMapping("/test/upload")
     public BaseResponse<String> testUpdateFile(@RequestPart("file")MultipartFile multipartFile){
@@ -59,6 +62,7 @@ public class FileController {
         }
     }
 
+    @Deprecated
     @AuthCheck(anyRole = {UserConstant.ADMIN_ROLE, UserConstant.SUPER_ADMIN_ROLE})
     @GetMapping("/test/download")
     public void testDownloadFile(String filepath, HttpServletResponse response) throws IOException {

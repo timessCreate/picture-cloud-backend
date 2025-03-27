@@ -153,6 +153,8 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         }
         SpaceVO spaceVO = new SpaceVO();
         BeanUtils.copyProperties(space, spaceVO);
+
+
         return spaceVO;
     }
 }

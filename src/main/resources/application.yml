@@ -13,6 +13,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 10MB
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
@@ -30,7 +31,7 @@ mybatis-plus:
 knife4j:
   enable: true
   openapi:
-    title: 云图库后端接口
+    title: 易图后端接口
     version: v1.0
     group:
       default:

@@ -199,7 +199,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long reviewerId = pictureQueryRequest.getReviewerId();
         String reviewMessage = pictureQueryRequest.getReviewMessage();
         Long spaceId = pictureQueryRequest.getSpaceId();
-        boolean nullSpaceId = pictureQueryRequest.isNullSpaceId();
         // 从多字段中搜索
         if (StrUtil.isNotBlank(searchText)) {
             // 需要拼接查询条件
@@ -210,8 +209,14 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
-        queryWrapper.eq(ObjUtil.isNotEmpty(spaceId), "spaceId", userId);
-        queryWrapper.isNull(nullSpaceId,"spaceId");
+        // spaceId为null时查询 IS NULL
+        queryWrapper.and(wrapper -> {
+            if (spaceId == null){
+                wrapper.isNull("spaceId");
+            }else{
+                wrapper.eq("spaceId", spaceId);
+            }
+        });
         queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
         queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
         queryWrapper.like(StrUtil.isNotBlank(picFormat), "picFormat", picFormat);
