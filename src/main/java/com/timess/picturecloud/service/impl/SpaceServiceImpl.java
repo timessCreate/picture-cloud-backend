@@ -1,14 +1,26 @@
 package com.timess.picturecloud.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.timess.picturecloud.exception.BusinessException;
 import com.timess.picturecloud.exception.ErrorCode;
 import com.timess.picturecloud.exception.ThrowUtils;
+import com.timess.picturecloud.model.domain.Picture;
 import com.timess.picturecloud.model.domain.Space;
 import com.timess.picturecloud.model.domain.User;
 import com.timess.picturecloud.model.dto.space.SpaceAddRequest;
+import com.timess.picturecloud.model.dto.space.SpaceQueryRequest;
 import com.timess.picturecloud.model.enums.SpaceLevelEnum;
+import com.timess.picturecloud.model.vo.PictureVO;
+import com.timess.picturecloud.model.vo.SpaceVO;
+import com.timess.picturecloud.model.vo.SpaceVO;
+import com.timess.picturecloud.model.vo.UserVO;
 import com.timess.picturecloud.service.SpaceService;
 import com.timess.picturecloud.mapper.SpaceMapper;
 import com.timess.picturecloud.service.UserService;
@@ -17,6 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -50,7 +64,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间级别不能为空");
             }
         }
-        // 修改数据时，如果要改空间级别
+        // 修改数据时，空间名字长度限制
         if (StrUtil.isNotBlank(spaceName) && spaceName.length() > 30) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间名称过长");
         }
@@ -70,8 +84,6 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             }
         }
     }
-
-
     @Override
     public long addSpace(SpaceAddRequest spaceAddRequest, User loginUser) {
         // 在此处将实体类和 DTO 进行转换
@@ -112,7 +124,37 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         }
     }
 
+    @Override
+    public QueryWrapper<Space> getQueryWrapper(SpaceQueryRequest spaceQueryRequest) {
+        QueryWrapper<Space> queryWrapper = new QueryWrapper<>();
+        if (spaceQueryRequest == null) {
+            return queryWrapper;
+        }
+        Long userId = spaceQueryRequest.getUserId();
+        String spaceName = spaceQueryRequest.getSpaceName();
+        Integer spaceLevel = spaceQueryRequest.getSpaceLevel();
+        queryWrapper.eq(ObjUtil.isNotNull(userId),"userId", userId);
+        queryWrapper.like(ObjUtil.isNotNull(spaceName),"spaceName", spaceName);
+        queryWrapper.eq(ObjUtil.isNotNull(spaceLevel),"spaceLevel", spaceLevel);
+        return queryWrapper;
+    }
 
+
+
+    /**
+     * 将实体类转换为pictureVO
+     * @param space
+     * @return
+     */
+    @Override
+    public SpaceVO objToVo(Space space){
+        if(space == null){
+            return null;
+        }
+        SpaceVO spaceVO = new SpaceVO();
+        BeanUtils.copyProperties(space, spaceVO);
+        return spaceVO;
+    }
 }
 
 

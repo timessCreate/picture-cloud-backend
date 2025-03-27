@@ -13,7 +13,6 @@ spring:
   servlet:
     multipart:
       max-file-size: 10MB
-
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
@@ -27,7 +26,6 @@ mybatis-plus:
       logic-delete-value: 1
       #逻辑未删除值
       logic-not-delete-value: 0
-
 #接口文档配置
 knife4j:
   enable: true
@@ -39,3 +37,9 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.timess.picturecloud.controller
+logging:
+  level:
+    com:
+      timess:
+        picturecloud:
+          controller: debug

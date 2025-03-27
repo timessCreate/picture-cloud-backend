@@ -81,8 +81,8 @@ public class PictureController {
      */
     @PostMapping("/upload")
     public BaseResponse<PictureVO> uploadPicture(
-            @RequestPart("file")MultipartFile multipartFile,
-            PictureUploadRequest pictureUploadRequest,
+            @ModelAttribute PictureUploadRequest pictureUploadRequest,
+            @RequestParam("file")MultipartFile multipartFile,
             HttpServletRequest request){
         User loginUser = userService.getLoginUser(request);
         PictureVO pictureVO = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
@@ -221,12 +221,12 @@ public class PictureController {
         String redisKey = String.format("yitu:listPictureVoByPage:%s", hashKey);
         String localCacheKey = String.format("listPictureVoByPage:%s", hashKey);
         String cacheValue = LOCAL_CACHE.getIfPresent(localCacheKey);
-        //如果命中本地缓存
-        if(cacheValue != null){
-            log.info("命中本地缓存：" + cacheValue);
-            Page<PictureVO> localCachePage = JSONUtil.toBean(cacheValue, Page.class);
-            return ResultUtils.success(localCachePage);
-        }
+//        //如果命中本地缓存
+//        if(cacheValue != null){
+//            log.info("命中本地缓存：" + cacheValue);
+//            Page<PictureVO> localCachePage = JSONUtil.toBean(cacheValue, Page.class);
+//            return ResultUtils.success(localCachePage);
+//        }
         //查询缓存，缓存中没有，再查询数据库
         //获取String类型操作对象
         ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();

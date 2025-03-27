@@ -1,9 +1,18 @@
 package com.timess.picturecloud.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.timess.picturecloud.model.domain.Picture;
 import com.timess.picturecloud.model.domain.Space;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.timess.picturecloud.model.domain.User;
 import com.timess.picturecloud.model.dto.space.SpaceAddRequest;
+import com.timess.picturecloud.model.dto.space.SpaceQueryRequest;
+import com.timess.picturecloud.model.vo.PictureVO;
+import com.timess.picturecloud.model.vo.SpaceVO;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
 * @author 33363
@@ -23,4 +32,19 @@ public interface SpaceService extends IService<Space> {
      * @return
      */
     long addSpace(SpaceAddRequest spaceAddRequest, User loginUser);
+
+    /**
+     * 将查询请求转化为QueryWrapper对象
+     * @param spaceQueryRequest
+     * @return
+     */
+    QueryWrapper<Space> getQueryWrapper(SpaceQueryRequest spaceQueryRequest);
+
+
+    /**
+     * 获取spaceVO对象
+     * @param space
+     * @return
+     */
+     SpaceVO objToVo(Space space);
 }

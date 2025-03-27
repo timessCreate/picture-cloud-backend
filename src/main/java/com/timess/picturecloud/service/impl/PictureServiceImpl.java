@@ -166,7 +166,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                             .setSql("totalSize = totalSize + " + picture.getPicSize())
                             .setSql("totalCount = totalCount + 1")
                             .update();
-                    ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "更新空间余额失败");
+                    
+                    //ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "更新空间余额失败");
                     return picture;
                 }
         );
@@ -230,7 +231,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
         }
         // 排序
-        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
+        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), "ascend".equals(sortOrder), sortField);
         return queryWrapper;
     }
 
