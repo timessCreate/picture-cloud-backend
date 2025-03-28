@@ -7,6 +7,7 @@ import java.util.Date;
 
 /**
  * 获取用户信息
+ * @author 33363
  */
 @Data
 public class UserVO implements Serializable {
@@ -53,6 +54,5 @@ public class UserVO implements Serializable {
      * 用户状态
      */
     private int status;
-
     private static final long serialVersionUID = 1L;
 }

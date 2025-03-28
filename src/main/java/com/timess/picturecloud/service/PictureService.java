@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.timess.picturecloud.model.domain.User;
 import com.timess.picturecloud.model.dto.picture.PictureQueryRequest;
 import com.timess.picturecloud.model.dto.picture.PictureReviewRequest;
+import com.timess.picturecloud.model.dto.picture.PictureUploadByBatchRequest;
 import com.timess.picturecloud.model.dto.picture.PictureUploadRequest;
 import com.timess.picturecloud.model.vo.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
@@ -89,4 +90,12 @@ public interface PictureService extends IService<Picture> {
      * @param picture
      */
     void checkPictureAuth(User loginUser, Picture picture);
+
+    /**
+     * 批量抓取和创建图片
+     * @param uploadByBatchRequest 抓取请求类
+     * @param loginUser 当前登录用户
+     * @return 成功创建的图片数量
+     */
+    Integer uploadPictureByBatch(PictureUploadByBatchRequest uploadByBatchRequest, User loginUser);
 }

@@ -7,10 +7,6 @@ import com.zhipu.oapi.service.v4.model.ChatCompletionRequest;
 import com.zhipu.oapi.service.v4.model.ChatMessage;
 import com.zhipu.oapi.service.v4.model.ChatMessageRole;
 import com.zhipu.oapi.service.v4.model.ModelApiResponse;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import kong.unirest.json.JSONArray;
-import kong.unirest.json.JSONObject;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -33,7 +29,7 @@ public class AiManager {
 
     public String invoke(String message) {
         ClientV4 client = new ClientV4.Builder(sk)
-                .networkConfig(30, 30, 30, 30, TimeUnit.SECONDS).build();
+                .networkConfig(30, 30, 60, 60, TimeUnit.SECONDS).build();
 
         List<ChatMessage> messages = getChatMessages(message);
         final String requestIdTemplate = "req-%s";
