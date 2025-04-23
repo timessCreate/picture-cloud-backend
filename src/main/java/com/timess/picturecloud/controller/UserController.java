@@ -1,5 +1,6 @@
 package com.timess.picturecloud.controller;
 
+import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.timess.picturecloud.annotation.AuthCheck;
@@ -11,20 +12,20 @@ import com.timess.picturecloud.exception.BusinessException;
 import com.timess.picturecloud.exception.ErrorCode;
 import com.timess.picturecloud.exception.ThrowUtils;
 import com.timess.picturecloud.model.domain.User;
-import com.timess.picturecloud.model.dto.user.UserAddRequest;
-import com.timess.picturecloud.model.dto.user.UserLoginRequest;
-import com.timess.picturecloud.model.dto.user.UserQueryRequest;
-import com.timess.picturecloud.model.dto.user.UserUpdateRequest;
+import com.timess.picturecloud.model.dto.user.*;
 import com.timess.picturecloud.model.vo.LoginUserVO;
 import com.timess.picturecloud.model.vo.UserVO;
 import com.timess.picturecloud.service.UserService;
 import com.timess.picturecloud.utils.CommonUtils;
+import com.timess.picturecloud.utils.EmailApi;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author 33363
@@ -36,14 +37,17 @@ public class UserController {
     @Resource
     private UserService userService;
 
+
+    @Resource
+    private EmailApi emailApi;
     /**
      * 用户注册
-     * @param loginRequest 注册登录请求类
+     * @param userAddRequest 注册登录请求类
      * @return
      */
     @PostMapping("/register")
-    public BaseResponse<String> userRegister(@RequestBody UserLoginRequest loginRequest){
-        userService.userRegister(loginRequest.getUserAccount(), loginRequest.getUserPassword());
+    public BaseResponse<String> userRegister(@RequestBody UserAddRequest userAddRequest){
+        userService.userRegister(userAddRequest.getUserAccount(), userAddRequest.getUserPassword(),userAddRequest.getMail(), userAddRequest.getVerifyCode());
         return ResultUtils.success("注册成功");
     }
 
@@ -176,5 +180,14 @@ public class UserController {
         return ResultUtils.success(userVOPage);
     }
 
+    @PostMapping("/verifyCode")
+    public BaseResponse<Boolean> sendVerifyMail(@RequestBody UserSendRegisterMailRequest mailRequest){
+        if(ObjUtil.isEmpty(mailRequest) || StringUtils.isEmpty(mailRequest.getMail())){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "传入参数错误");
+        }
+        boolean result = emailApi.sendGeneralEmail("易图注册验证码", mailRequest.getMail());
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "验证码发送失败");
+        return ResultUtils.success(true);
+    }
 
 }

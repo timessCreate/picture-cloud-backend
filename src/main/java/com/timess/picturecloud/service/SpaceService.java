@@ -40,6 +40,7 @@ public interface SpaceService extends IService<Space> {
      */
     QueryWrapper<Space> getQueryWrapper(SpaceQueryRequest spaceQueryRequest);
 
+    SpaceVO getSpaceVO(Space space, HttpServletRequest request);
 
     /**
      * 获取spaceVO对象

@@ -10,6 +10,7 @@ import com.timess.picturecloud.constant.UserConstant;
 import com.timess.picturecloud.exception.BusinessException;
 import com.timess.picturecloud.exception.ErrorCode;
 import com.timess.picturecloud.exception.ThrowUtils;
+import com.timess.picturecloud.manager.auth.SpaceUserAuthManager;
 import com.timess.picturecloud.model.domain.Space;
 import com.timess.picturecloud.model.domain.Space;
 import com.timess.picturecloud.model.domain.User;
@@ -41,6 +42,9 @@ public class SpaceController {
 
     @Autowired
     private final SpaceService spaceService;
+
+    @Autowired
+    private SpaceUserAuthManager authManager;
 
     @Autowired
     private UserService userService;
@@ -100,12 +104,11 @@ public class SpaceController {
         // 查询数据库
         Space space = spaceService.getById(id);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
-        User loginUser = userService.getLoginUser(request);
-        if(!Objects.equals(space.getUserId(), loginUser.getId()) && !userService.isAdmin(loginUser)){
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "仅空间所有者和管理员可访问");
-        }
+        List<String> permissionList = authManager.getPermissionList(space, userService.getLoginUser(request));
+        SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
+        spaceVO.setPermissionList(permissionList);
         // 获取封装类
-        return ResultUtils.success(spaceService.objToVo(space));
+        return ResultUtils.success(spaceVO);
     }
     @GetMapping("/get/vo/userId")
     public BaseResponse<SpaceVO> getSpaceVOByUserId(long id, HttpServletRequest request) {

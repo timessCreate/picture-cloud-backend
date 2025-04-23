@@ -15,6 +15,10 @@ import com.timess.picturecloud.constant.UserConstant;
 import com.timess.picturecloud.exception.BusinessException;
 import com.timess.picturecloud.exception.ErrorCode;
 import com.timess.picturecloud.exception.ThrowUtils;
+import com.timess.picturecloud.manager.auth.SpaceUserAuthManager;
+import com.timess.picturecloud.manager.auth.StpKit;
+import com.timess.picturecloud.manager.auth.annotation.SaSpaceCheckPermission;
+import com.timess.picturecloud.manager.auth.model.SpaceUserPermissionConstant;
 import com.timess.picturecloud.model.domain.Picture;
 import com.timess.picturecloud.model.domain.Space;
 import com.timess.picturecloud.model.domain.User;
@@ -60,6 +64,8 @@ public class PictureController {
     private PictureService pictureService;
 
     @Resource
+    SpaceUserAuthManager authManager;
+    @Resource
     private StringRedisTemplate stringRedisTemplate;
 
     /**
@@ -80,9 +86,10 @@ public class PictureController {
      * @return
      */
     @PostMapping("/upload")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPicture(
             @ModelAttribute PictureUploadRequest pictureUploadRequest,
-            @RequestParam("file")MultipartFile multipartFile,
+            @RequestPart("file")MultipartFile multipartFile,
             HttpServletRequest request){
         User loginUser = userService.getLoginUser(request);
         PictureVO pictureVO = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
@@ -90,6 +97,7 @@ public class PictureController {
     }
 
     @PostMapping("/uploadByUrl")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPictureByUrl(
             @RequestBody PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request){
@@ -103,6 +111,7 @@ public class PictureController {
      * 删除图片
      */
     @PostMapping("/delete")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_DELETE)
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -166,11 +175,20 @@ public class PictureController {
         // 空间权限校验
         Long spaceId = picture.getSpaceId();
         if(spaceId != null){
-            User loginUser = userService.getLoginUser(request);
-            pictureService.checkPictureAuth(loginUser, picture);
+            //User loginUser = userService.getLoginUser(request);
+            //改为使用编程式鉴权
+            //pictureService.checkPictureAuth(loginUser, picture);
+            boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
+            ThrowUtils.throwIf(!hasPermission, ErrorCode.NOT_AUTH_ERROR);
         }
         // 获取封装类
-        return ResultUtils.success(pictureService.getPictureVO(picture, request));
+        PictureVO pictureVO = pictureService.getPictureVO(picture, request);
+        //获取当前对象对本图片的权限
+        Space space = spaceService.getById(spaceId);
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = authManager.getPermissionList(space, loginUser);
+        pictureVO.setPermissionList(permissionList);
+        return ResultUtils.success(pictureVO);
     }
 
     /**
@@ -205,47 +223,21 @@ public class PictureController {
             //普通用户只能看到审核通过后的数据
             pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
         }else {
-            //私有空间
-            User loginUser = userService.getLoginUser(request);
-            Space space = spaceService.getById(spaceId);
-            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
-            if(!loginUser.getId().equals(space.getUserId())){
-                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR,"无权限查询该私有空间");
-            }
+            boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
+            ThrowUtils.throwIf(!hasPermission, ErrorCode.NOT_AUTH_ERROR);
+            //已修改为Sa-token 编程式校验
+//            //私有空间
+//            User loginUser = userService.getLoginUser(request);
+//            Space space = spaceService.getById(spaceId);
+//            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+//            if(!loginUser.getId().equals(space.getUserId())){
+//                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR,"无权限查询该私有空间");
+//            }
         }
-        //查询本地缓存，缓存中没有，再查询分布式缓存
-        String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
-        //构建缓存key
-        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes(StandardCharsets.UTF_8));
-        String redisKey = String.format("yitu:listPictureVoByPage:%s", hashKey);
-        String localCacheKey = String.format("listPictureVoByPage:%s", hashKey);
-        String cacheValue = LOCAL_CACHE.getIfPresent(localCacheKey);
-//        //如果命中本地缓存
-//        if(cacheValue != null){
-//            log.info("命中本地缓存：" + cacheValue);
-//            Page<PictureVO> localCachePage = JSONUtil.toBean(cacheValue, Page.class);
-//            return ResultUtils.success(localCachePage);
-//        }
-        //查询缓存，缓存中没有，再查询数据库
-        //获取String类型操作对象
-        ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
-//        String redisValue = valueOps.get(redisKey);
-//        if(redisValue != null){
-//            //命中缓存,则直接返回结果,并更新本地缓存
-//            log.info("命中分布式缓存：" + redisValue);
-//            LOCAL_CACHE.put(localCacheKey, redisValue);
-//            Page<PictureVO> cachePage = JSONUtil.toBean(redisValue, Page.class);
-//            return ResultUtils.success(cachePage);
-//        }
         // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
         Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
-        //添加到本地缓存中
-        LOCAL_CACHE.put(localCacheKey, JSONUtil.toJsonStr(pictureVOPage));
-        //添加到缓存中, 同时为了避免缓存雪崩，为每一键值设置为5-10分钟内随机过期时间
-        int expireTime = 300 + RandomUtil.randomInt(300);
-        valueOps.set(redisKey, JSONUtil.toJsonStr(pictureVOPage), expireTime, TimeUnit.SECONDS);
         //返回封装类
         return ResultUtils.success(pictureVOPage);
     }
@@ -304,6 +296,7 @@ public class PictureController {
      * 编辑图片（给用户使用）
      */
     @PostMapping("/edit")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditRequest pictureEditRequest, HttpServletRequest request) {
         if (pictureEditRequest == null || pictureEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -322,7 +315,8 @@ public class PictureController {
         long id = pictureEditRequest.getId();
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        pictureService.checkPictureAuth(loginUser, oldPicture);
+        //改为使用注解鉴权
+        //pictureService.checkPictureAuth(loginUser, oldPicture);
         //update review parameters
         pictureService.fillReviewParams(picture, loginUser);
         // 操作数据库
@@ -354,6 +348,22 @@ public class PictureController {
         User loginUser =  userService.getLoginUser(request);
         pictureService.doPictureReview(pictureReviewRequest, loginUser);
         return ResultUtils.success(true);
+    }
+
+
+    /**
+     * 批量抓取并上传图片
+     * @param uploadByBatchRequest 批量抓取请求
+     * @param request 请求
+     * @return 成功上传的图片数量
+     */
+    @PostMapping("/upload/batch")
+    @AuthCheck(anyRole = {UserConstant.SUPER_ADMIN_ROLE, UserConstant.ADMIN_ROLE})
+    public BaseResponse<Integer> uploadPictureByBatch(@RequestBody PictureUploadByBatchRequest uploadByBatchRequest, HttpServletRequest request){
+        ThrowUtils.throwIf(uploadByBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser =  userService.getLoginUser(request);
+        Integer count = pictureService.uploadPictureByBatch(uploadByBatchRequest, loginUser);
+        return ResultUtils.success(count);
     }
 }
 
