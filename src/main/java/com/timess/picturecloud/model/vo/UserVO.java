@@ -23,6 +23,11 @@ public class UserVO implements Serializable {
     private String userAccount;
 
     /**
+     * 用户邮箱
+     */
+    private String mail;
+
+    /**
      * 用户昵称
      */
     private String userName;

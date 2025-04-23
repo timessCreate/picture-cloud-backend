@@ -27,7 +27,6 @@ public class LoggerInterceptor {
                 methodName,
                 Arrays.toString(args));
         log.info("==================================================================================");
-
     }
 
 }

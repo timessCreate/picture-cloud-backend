@@ -21,6 +21,19 @@ public class UserAddRequest implements Serializable {
     private String userAccount;
 
     /**
+     * 用户邮箱
+     */
+    private String mail;
+
+    /**
+     * 用户密码
+     */
+    private String userPassword;
+    /**
+     * 验证码
+     */
+    private String verifyCode;
+    /**
      * 用户头像
      */
     private String userAvatar;

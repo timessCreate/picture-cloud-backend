@@ -20,7 +20,7 @@ public interface UserService extends IService<User> {
      * @param userAccount
      * @param userPassword
      */
-    void userRegister(String userAccount, String userPassword);
+    void userRegister(String userAccount, String userPassword, String mail, String verifyCode);
 
     /**
      * 用户登录

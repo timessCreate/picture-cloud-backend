@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.timess.picturecloud.exception.BusinessException;
 import com.timess.picturecloud.exception.ErrorCode;
 import com.timess.picturecloud.exception.ThrowUtils;
+import com.timess.picturecloud.manager.auth.StpKit;
 import com.timess.picturecloud.mapper.UserMapper;
 import com.timess.picturecloud.model.domain.User;
 import com.timess.picturecloud.model.dto.user.UserQueryRequest;
@@ -18,9 +19,14 @@ import com.timess.picturecloud.model.vo.LoginUserVO;
 import com.timess.picturecloud.model.vo.UserVO;
 import com.timess.picturecloud.service.UserService;
 import com.timess.picturecloud.utils.CommonUtils;
+import com.timess.picturecloud.utils.EmailApi;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.ArrayList;
@@ -37,28 +43,41 @@ import static com.timess.picturecloud.constant.UserConstant.USER_LOGIN_STATE;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService{
 
+    @Autowired
+    private StringRedisTemplate redisTemplate;
     /**
      * 用户注册校验
      * @param userAccount
      * @param userPassword
      */
     @Override
-    public void userRegister(String userAccount, String userPassword) {
+    public void userRegister(String userAccount, String userPassword, String mail, String verifyCode) {
         //1.校验
-        if(StrUtil.hasBlank(userAccount, userPassword)){
+        if(StrUtil.hasBlank(userAccount, userPassword, mail, verifyCode)){
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数不全");
+        }
+        //校验验证码是否存在
+        String code = redisTemplate.opsForValue().get(EmailApi.buildVerifyCodeKey(mail));
+        if(StringUtils.isEmpty(code) || !code.equals(verifyCode)){
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "验证码过期或错误");
         }
         //校验账号名是否已经被使用
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getUserAccount, userAccount);
         long count = this.baseMapper.selectCount(queryWrapper);
         ThrowUtils.throwIf(count > 0, ErrorCode.PARAMS_ERROR, "账号名已被使用");
+        //验证邮箱是否已经被注册
+        queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getMail, mail);
+        count = this.baseMapper.selectCount(queryWrapper);
+        ThrowUtils.throwIf(count > 0, ErrorCode.PARAMS_ERROR, "邮箱已被注册，请直接登录");
         //密码加密
         String encryptPassword = CommonUtils.getEncryptPassword(userPassword);
         //数据插入
         User user = new User();
         user.setUserAccount(userAccount);
         user.setUserPassword(encryptPassword);
+        user.setMail(mail);
         user.setUserRole(UserRoleEnum.USER.getValue());
         boolean saveResult = this.save(user);
         ThrowUtils.throwIf(!saveResult, ErrorCode.SYSTEM_ERROR, "注册失败，数据库异常");
@@ -86,6 +105,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         BeanUtils.copyProperties(currentUser, loginUserVO);
         //保存用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, currentUser);
+        //将用户的登录态记录到Sa-token中，便于空间鉴权时使用，注意保证该用户信息与SpringSession中的过期时间一致。
+        StpKit.SPACE.login(currentUser.getId());
+        StpKit.SPACE.getSession().set(USER_LOGIN_STATE, currentUser);
         return loginUserVO;
     }
 

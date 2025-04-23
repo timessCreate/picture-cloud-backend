@@ -18,7 +18,7 @@ public class Space implements Serializable {
     /**
      * id
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /**
@@ -70,6 +70,11 @@ public class Space implements Serializable {
      * 更新时间
      */
     private Date updateTime;
+
+    /**
+     * 空间类型
+     */
+    private Integer spaceType;
 
     /**
      * 是否删除
